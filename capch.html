@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration with CAPTCHA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #da2602 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 500px;
+            animation: slideIn 0.5s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            animation: fadeIn 1s ease-out;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+            background-color: #f9f9ff;
+        }
+        .error-text {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+        .success-text {
+            color: #27ae60;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+        /* CAPTCHA Styling */
+        .captcha-container {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+            animation: fadeIn 1.2s ease-out;
+        }
+        .captcha-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .captcha-image {
+            background: linear-gradient(135deg, #5566b1 0%, #8207fc 100%);
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+            letter-spacing: 8px;
+            min-width: 150px;
+            text-align: center;
+            user-select: none;
+            font-family: 'Courier New', monospace;
+        }
+        .captcha-refresh {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .captcha-refresh:hover {
+            background: #764ba2;
+            transform: rotate(180deg);
+        }
+        .captcha-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            letter-spacing: 5px;
+            transition: all 0.3s;
+        }
+        .captcha-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+        }
+        .captcha-error {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+            text-align: center;
+        }
+        .captcha-success {
+            color: #27ae60;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+            text-align: center;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            animation: fadeIn 1.4s ease-out;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        .form-footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .form-footer a:hover {
+            color: #764ba2;
+        }
+        .password-strength {
+            height: 5px;
+            background: #ddd;
+            border-radius: 5px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            transition: all 0.3s;
+        }
+        .weak {
+            background: #e74c3c;
+            width: 33%;
+        }
+        .medium {
+            background: #f39c12;
+            width: 66%;
+        }
+        .strong {
+            background: #27ae60;
+            width: 100%;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Create Account</h1>
+        <form id="registrationForm">
+            <!-- Name Field -->
+            <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" required>
+                <div class="error-text" id="nameError"></div>
+            </div>
+
+            <!-- Email Field -->
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                <div class="error-text" id="emailError"></div>
+            </div>
+
+            <!-- Phone Field -->
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" placeholder="Enter 10-digit phone number" pattern="[0-9]{10}" required>
+                <div class="error-text" id="phoneError"></div>
+            </div>
+
+            <!-- Gender Field -->
+            <div class="form-group">
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <!-- Password Field -->
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter a strong password" required>
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="passwordBar"></div>
+                </div>
+                <div class="error-text" id="passwordError"></div>
+            </div>
+
+            <!-- Confirm Password Field -->
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re-enter your password" required>
+                <div class="error-text" id="confirmError"></div>
+            </div>
+
+            <!-- CAPTCHA Section -->
+            <div class="captcha-container">
+                <label>Verify CAPTCHA</label>
+                <div class="captcha-box">
+                    <div class="captcha-image" id="captchaImage"></div>
+                    <button type="button" class="captcha-refresh" id="captchaRefresh" onclick="generateCaptcha()">🔄</button>
+                </div>
+                <input type="text" class="captcha-input" id="captchaInput" placeholder="Enter CAPTCHA code" required>
+                <div class="captcha-error" id="captchaError"></div>
+                <div class="captcha-success" id="captchaSuccess"></div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="submitBtn">Create Account</button>
+
+            <!-- Footer -->
+            <div class="form-footer">
+                Already have an account? <a onclick="window.location.href='login.html'">Login here</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let captchaCode = '';
+        const captchaImage = document.getElementById('captchaImage');
+        const captchaInput = document.getElementById('captchaInput');
+        const captchaError = document.getElementById('captchaError');
+        const captchaSuccess = document.getElementById('captchaSuccess');
+        const form = document.getElementById('registrationForm');
+
+        // Generate CAPTCHA
+        function generateCaptcha() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            captchaCode = '';
+            for (let i = 0; i < 6; i++) {
+                captchaCode += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            captchaImage.textContent = captchaCode;
+            captchaInput.value = '';
+            captchaError.style.display = 'none';
+            captchaSuccess.style.display = 'none';
+            console.log('CAPTCHA:', captchaCode); // For testing
+        }
+
+        // Validate CAPTCHA on input
+        captchaInput.addEventListener('blur', function() {
+            if (this.value.toUpperCase() === captchaCode) {
+                captchaError.style.display = 'none';
+                captchaSuccess.style.display = 'block';
+                captchaSuccess.textContent = '✓ CAPTCHA verified';
+            } else if (this.value.length > 0) {
+                captchaError.style.display = 'block';
+                captchaError.textContent = '✗ CAPTCHA does not match';
+                captchaSuccess.style.display = 'none';
+            }
+        });
+
+        // Validate Full Name
+        document.getElementById('fullName').addEventListener('blur', function() {
+            const nameError = document.getElementById('nameError');
+            if (this.value.trim().length < 3) {
+                nameError.textContent = 'Name must be at least 3 characters';
+                nameError.style.display = 'block';
+            } else {
+                nameError.style.display = 'none';
+            }
+        });
+
+        // Validate Email
+        document.getElementById('email').addEventListener('blur', function() {
+            const emailError = document.getElementById('emailError');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(this.value)) {
+                emailError.textContent = 'Please enter a valid email';
+                emailError.style.display = 'block';
+            } else {
+                emailError.style.display = 'none';
+            }
+        });
+
+        // Validate Phone
+        document.getElementById('phone').addEventListener('blur', function() {
+            const phoneError = document.getElementById('phoneError');
+            if (this.value.length !== 10 || isNaN(this.value)) {
+                phoneError.textContent = 'Phone must be 10 digits';
+                phoneError.style.display = 'block';
+            } else {
+                phoneError.style.display = 'none';
+            }
+        });
+
+        // Password Strength Indicator
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const passwordBar = document.getElementById('passwordBar');
+            const passwordError = document.getElementById('passwordError');
+            
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^a-zA-Z0-9]/.test(password)) strength++;
+
+            passwordBar.className = 'password-strength-bar';
+            if (strength === 1) {
+                passwordBar.classList.add('weak');
+                passwordError.textContent = 'Weak password';
+                passwordError.style.display = 'block';
+            } else if (strength === 2) {
+                passwordBar.classList.add('medium');
+                passwordError.style.display = 'none';
+            } else if (strength >= 3) {
+                passwordBar.classList.add('strong');
+                passwordError.style.display = 'none';
+            }
+        });
+
+        // Validate Confirm Password
+        document.getElementById('confirmPassword').addEventListener('blur', function() {
+            const confirmError = document.getElementById('confirmError');
+            if (this.value !== document.getElementById('password').value) {
+                confirmError.textContent = 'Passwords do not match';
+                confirmError.style.display = 'block';
+            } else {
+                confirmError.style.display = 'none';
+            }
+        });
+
+        // Form Submit
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const gender = document.getElementById('gender').value;
+            const password = document.getElementById('password').value;
+            const captchaInputValue = captchaInput.value.toUpperCase();
+
+            // Verify CAPTCHA
+            if (captchaInputValue !== captchaCode) {
+                captchaError.textContent = '✗ CAPTCHA verification failed';
+                captchaError.style.display = 'block';
+                return;
+            }
+
+            // All validations passed
+            const userData = {
+                fullName,
+                email,
+                phone,
+                gender,
+                timestamp: new Date().toLocaleString()
+            };
+
+            console.log('Registration Data:', userData);
+            sessionStorage.setItem('userData', JSON.stringify(userData));
+            
+            alert('✓ Account created successfully!\nRedirecting to verification...');
+            window.location.href = 'index.html';
+        });
+
+        // Initialize CAPTCHA on page load
+        window.addEventListener('load', generateCaptcha);
+    </script>
+</body>
+</html>
